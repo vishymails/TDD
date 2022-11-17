@@ -1,0 +1,49 @@
+public class CsvToMapAggregator implements ArgumentsAggregator {
+
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target(ElementType.PARAMETER)
+    @AggregateWith(CsvToMapAggregator.class)
+    public @interface CsvToMap {}
+
+    private static String[] keys = null; // ATTN: Do not use in parallel runs !!!
+
+    @Override public Map<String, Object> aggregateArguments(ArgumentsAccessor accessor, ParameterContext context) throws ArgumentsAggregationException {
+        Object[] values = accessor.toArray();
+        if (keys == null) {
+            keys = (String[]) values; // First Line: Header
+        } else if (values.length != keys.length) {
+            keys = null; // Last Line: End of Data
+            return null;
+        }
+        Map<String, Object> map = new HashMap<>();
+        for (int i = 0; i < values.length; i++) {
+            map.put(keys[i], values[i]); // Read Data from Line
+        }
+        return map;
+    }
+}
+
+
+
+
+
+
+
+
+@ParameterizedTest(name = "{0}")
+@CsvFileSource(resources = "/testcases.csv", delimiter = ';')
+@DisplayName("read complete .csv and map columns")
+void testCsvData(@CsvToMap Map<String, Object> map, TestInfo info) {
+    switch (info.getDisplayName()) {
+        case "Testcase": // First Line: Header
+        case "EOF": // Last Line: End of File
+            break;
+        default:
+            assertNotNull(map);
+            assertFalse(map.isEmpty());
+            
+            
+            
+            
+            
+ 
